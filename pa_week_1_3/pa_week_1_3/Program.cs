@@ -1,12 +1,88 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Diagnostics;
 
 namespace pa_week_1_3
 {
 
-    class Heap
+    class Heap<T> where T: IComparable<T>
     {
+        // Returns true if a > b, false if a <= b
+        public delegate bool Compare(T a, T b);
+        public Compare compareFunction;
 
+        List<T> _values;
+        bool _isMin;
+
+        public Heap()
+        {
+            _values = new List<T>();
+        }
+
+        public Heap(int count)
+        {
+            _values = new List<T>(count);
+        }
+
+        public Heap(List<T> values): this(values.Count)
+        {
+            
+        }
+
+        public void Add(T value)
+        {
+            _values.Add(value);
+            ValidateOnAdd();
+        }
+
+        public T Remove()
+        {
+            if (_values.Count > 0)
+            {
+                T result = _values[0];
+                return result;
+            } else
+            {
+                return default(T);
+            }
+
+        }
+
+        public bool IsEmpty()
+        {
+            return _values.Count == 0;
+        }
+
+        /// <summary>
+        /// Validates heap order assuming that last value has been added
+        /// and other values already keep heap order
+        /// </summary>
+        protected void ValidateOnAdd()
+        {
+            bool change = true;
+            int index = _values.Count - 1;
+            while (change && index > 0)
+            {
+                change = false;
+                int parentIndex = (index - 1) / 2;
+                T currentValue = _values[index];
+                T parentValue = _values[parentIndex];
+
+                // Swap if currentValue > parentValue (maxHeap)
+                // or currentValue <= parentValue (minHeap)
+                if (!compareFunction(currentValue, parentValue) && _isMin)
+                {
+                    _values[parentIndex] = currentValue;
+                    _values[index] = parentValue;
+                    change = true;
+                }
+            }
+        }
+
+        protected void ValidateOnRemove()
+        {
+
+        }
     }
 
     class Graph
