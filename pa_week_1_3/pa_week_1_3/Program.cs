@@ -40,12 +40,14 @@ namespace pa_week_1_3
             if (_values.Count > 0)
             {
                 T result = _values[0];
+                _values[0] = _values[_values.Count - 1];
+                _values.RemoveAt(_values.Count - 1);
+                ValidateOnRemove();
                 return result;
             } else
             {
                 return default(T);
             }
-
         }
 
         public bool IsEmpty()
@@ -81,7 +83,34 @@ namespace pa_week_1_3
 
         protected void ValidateOnRemove()
         {
+            bool change = true;
+            int index = 0;
+            while(change && index < _values.Count)
+            {
+                change = false;
 
+                T currentValue = _values[index];
+                T leftChildValue = _values[2 * index + 1];
+                T rightChildValue = _values[2 * index + 2];
+
+                int indexForChange = -1;
+                if (!compareFunction(currentValue, leftChildValue) && _isMin)
+                {
+                    indexForChange = 2 * index + 1;
+                    change = true;
+                }
+                else if (!compareFunction(currentValue, rightChildValue) && _isMin) {
+                    indexForChange = 2 * index + 2;
+                    change = true;
+                }
+
+                if (change)
+                {
+                    _values[index] = _values[indexForChange];
+                    _values[indexForChange] = currentValue;
+                    index = indexForChange;
+                }
+            }
         }
     }
 
