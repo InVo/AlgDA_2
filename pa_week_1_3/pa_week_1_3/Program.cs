@@ -5,14 +5,16 @@ using System.Diagnostics;
 namespace pa_week_1_3
 {
 
-    class Heap<T> where T: IComparable<T>
+    class Heap<T>
     {
         // Returns true if a > b, false if a <= b
         public delegate bool Compare(T a, T b);
-        public Compare compareFunction;
+        public Compare CompareFunction;
 
         List<T> _values;
-        bool _isMin;
+        bool _isMin = true;
+
+        public int Count { get { return _values.Count; } }
 
         public Heap()
         {
@@ -72,7 +74,7 @@ namespace pa_week_1_3
 
                 // Swap if currentValue > parentValue (maxHeap)
                 // or currentValue <= parentValue (minHeap)
-                if (!compareFunction(currentValue, parentValue) && _isMin)
+                if (!CompareFunction(currentValue, parentValue) && _isMin)
                 {
                     _values[parentIndex] = currentValue;
                     _values[index] = parentValue;
@@ -90,16 +92,18 @@ namespace pa_week_1_3
                 change = false;
 
                 T currentValue = _values[index];
-                T leftChildValue = _values[2 * index + 1];
-                T rightChildValue = _values[2 * index + 2];
+                bool haveLeftChild = _values.Count > 2 * index + 1;
+                bool haveRightChild = _values.Count > 2 * index + 2;
+                T leftChildValue = haveLeftChild ? _values[2 * index + 1] : default(T);
+                T rightChildValue = haveRightChild ? _values[2 * index + 2] : default(T);
 
                 int indexForChange = -1;
-                if (!compareFunction(currentValue, leftChildValue) && _isMin)
+                if (haveLeftChild && !CompareFunction(currentValue, leftChildValue) && _isMin)
                 {
                     indexForChange = 2 * index + 1;
                     change = true;
                 }
-                else if (!compareFunction(currentValue, rightChildValue) && _isMin) {
+                else if (haveRightChild && !CompareFunction(currentValue, rightChildValue) && _isMin) {
                     indexForChange = 2 * index + 2;
                     change = true;
                 }
@@ -132,7 +136,7 @@ namespace pa_week_1_3
             Edges = new GraphEdge[edgesNum];
         }
 
-        public void AddEdge(int vertice1, int vertice2, int value)
+        public void AddEdge(long vertice1, long vertice2, long value)
         {
             var vert1 = Vertices[vertice1 - 1];
             var vert2 = Vertices[vertice2 - 1];
@@ -146,33 +150,48 @@ namespace pa_week_1_3
 
     class GraphVertice
     {
-        private List<GraphEdge> _edges;
+        public long Weight;
+        public List<GraphEdge> Edges;
+        public bool IsInMST;
 
         public GraphVertice()
         {
-            _edges = new List<GraphEdge>();
-        }
+            Edges = new List<GraphEdge>();
+            Weight = long.MaxValue;
+            IsInMST = false;
+    }
 
         public void AddEdge(GraphEdge edge)
         {
-            _edges.Add(edge);
+            Edges.Add(edge);
         }
     }
 
     class GraphEdge
     {
-        private GraphVertice[] _endPoints;
-        public int Value { get; private set; }
+        public GraphVertice[] Vertices;
+        public long Value { get; private set; }
 
-        public GraphEdge(GraphVertice start, GraphVertice end, int value)
+        public GraphEdge(GraphVertice start, GraphVertice end, long value)
         {
-            _endPoints = new GraphVertice[] { start, end };
+            Vertices = new GraphVertice[] { start, end };
             Value = value;
         }
     }
 
     class Program
     {
+        static List<GraphVertice> mstVertices = new List<GraphVertice>();
+        static List<GraphVertice> notPassedVertices;
+        //static Heap<GraphVertice> heap;
+
+        static long mstValue = 0;
+        
+        static bool Compare(GraphVertice a, GraphVertice b)
+        {
+            return a.Weight >= b.Weight;
+        }
+
         static void Main(string[] args)
         {
             string[] lines = System.IO.File.ReadAllLines("edges.txt");
@@ -189,6 +208,8 @@ namespace pa_week_1_3
             int edgeCount = int.Parse(counts[1]);
 
             var graph = new Graph(vertCount, edgeCount);
+ //           heap = new Heap<GraphVertice>(vertCount);
+ //           heap.CompareFunction = Compare;
 
             for (int i = 1; i < lines.Length; ++i)
             {
@@ -196,9 +217,9 @@ namespace pa_week_1_3
 
                 Debug.Assert(arguments.Length == 3, string.Format("Number of arguments in line {0} should be 3", i));
 
-                int vertice1 = int.Parse(arguments[0]);
-                int vertice2 = int.Parse(arguments[1]);
-                int value = int.Parse(arguments[2]);
+                long vertice1 = long.Parse(arguments[0]);
+                long vertice2 = long.Parse(arguments[1]);
+                long value = long.Parse(arguments[2]);
                 graph.AddEdge(vertice1, vertice2, value);
             }
 
@@ -206,6 +227,48 @@ namespace pa_week_1_3
             Debug.Assert(graph.Edges.Length == edgeCount, "Vertices count should be equal to the value in file");
 
 
+            notPassedVertices = new List<GraphVertice>(graph.Vertices);
+            notPassedVertices[0].Weight = 0;
+            AddVerticeToMST(0);
+
+            while (notPassedVertices.Count > 0)
+            {
+                long min = long.MaxValue;
+                int minIndex = 0;
+                for(int i = 0; i < notPassedVertices.Count; ++i)
+                {
+                    var vertice = notPassedVertices[i];
+                    if (vertice.Weight < min)
+                    {
+                        min = vertice.Weight;
+                        minIndex = i;
+                    }
+                }
+                AddVerticeToMST(minIndex);
+            }
+
+            Console.WriteLine(string.Format("Result = {0}", mstValue)); // Correct Result -3612829
+        }
+
+        static void AddVerticeToMST(int index)
+        {
+            var vertice = notPassedVertices[index];
+            mstVertices.Add(vertice);
+            notPassedVertices.RemoveAt(index);
+            mstValue += vertice.Weight;
+            vertice.IsInMST = true;
+
+            foreach(var edge in vertice.Edges)
+            {
+                var vert = Array.Find(edge.Vertices, v => !v.IsInMST);
+                if (vert != null)
+                {
+                    if (vert.Weight > edge.Value)
+                    {
+                        vert.Weight = edge.Value;
+                    }
+                }
+            }
         }
     }
 }

@@ -72,7 +72,7 @@ namespace pa_week_1_1
                 completionTime += job.Length;
                 result += completionTime * job.Weight;
             }
-            Console.WriteLine(string.Format("Result = {0}", result.ToString()));
+            Console.WriteLine(string.Format("Result = {0}", result.ToString())); // Correct Result 69119377652
         }
     }
 }

@@ -11,7 +11,7 @@ namespace pa_week_1_2
     {
         public int Weight { get; private set; }
         public int Length { get; private set; }
-        public float Ratio { get { return Weight / Length; } }
+        public double Ratio { get { return (double)Weight / (double)Length; } }
 
         public Job(int weight, int length)
         {
@@ -57,14 +57,14 @@ namespace pa_week_1_2
                 }
                 return -1;
             });
-            int result = 0;
-            int completionTime = 0;
+            long result = 0;
+            long completionTime = 0;
             foreach(var job in jobs)
             {
                 completionTime += job.Length;
                 result += completionTime * job.Weight;
             }
-            Console.WriteLine(string.Format("Result = {0}", result));
+            Console.WriteLine(string.Format("Result = {0}", result)); // Correct Result 67311454237
         }
     }
 }
