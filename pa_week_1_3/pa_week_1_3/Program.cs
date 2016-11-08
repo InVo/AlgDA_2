@@ -26,9 +26,12 @@ namespace pa_week_1_3
             _values = new List<T>(count);
         }
 
-        public Heap(List<T> values): this(values.Count)
+        public Heap(T[] values): this(values.Length)
         {
-            
+            foreach(T value in values)
+            {
+                Add(value);
+            }
         }
 
         public void Add(T value)
@@ -78,6 +81,7 @@ namespace pa_week_1_3
                 {
                     _values[parentIndex] = currentValue;
                     _values[index] = parentValue;
+                    index = parentIndex;
                     change = true;
                 }
             }
@@ -182,8 +186,7 @@ namespace pa_week_1_3
     class Program
     {
         static List<GraphVertice> mstVertices = new List<GraphVertice>();
-        static List<GraphVertice> notPassedVertices;
-        //static Heap<GraphVertice> heap;
+        static Heap<GraphVertice> heap;
 
         static long mstValue = 0;
         
@@ -208,8 +211,8 @@ namespace pa_week_1_3
             int edgeCount = int.Parse(counts[1]);
 
             var graph = new Graph(vertCount, edgeCount);
- //           heap = new Heap<GraphVertice>(vertCount);
- //           heap.CompareFunction = Compare;
+            heap = new Heap<GraphVertice>(vertCount);
+            heap.CompareFunction = Compare;
 
             for (int i = 1; i < lines.Length; ++i)
             {
@@ -227,34 +230,23 @@ namespace pa_week_1_3
             Debug.Assert(graph.Edges.Length == edgeCount, "Vertices count should be equal to the value in file");
 
 
-            notPassedVertices = new List<GraphVertice>(graph.Vertices);
-            notPassedVertices[0].Weight = 0;
-            AddVerticeToMST(0);
+            graph.Vertices[0].Weight = 0;
+            AddVerticeToMST(graph.Vertices[0]);
+            //heap = new Heap<GraphVertice>(graph.Vertices);
 
-            while (notPassedVertices.Count > 0)
+            while (heap.Count > 0)
             {
-                long min = long.MaxValue;
-                int minIndex = 0;
-                for(int i = 0; i < notPassedVertices.Count; ++i)
-                {
-                    var vertice = notPassedVertices[i];
-                    if (vertice.Weight < min)
-                    {
-                        min = vertice.Weight;
-                        minIndex = i;
-                    }
-                }
-                AddVerticeToMST(minIndex);
+                var vertice = heap.Remove();
+                AddVerticeToMST(vertice);
             }
 
             Console.WriteLine(string.Format("Result = {0}", mstValue)); // Correct Result -3612829
         }
 
-        static void AddVerticeToMST(int index)
+        static void AddVerticeToMST(GraphVertice vertice)
         {
-            var vertice = notPassedVertices[index];
+            vertice.IsInMST = true;
             mstVertices.Add(vertice);
-            notPassedVertices.RemoveAt(index);
             mstValue += vertice.Weight;
             vertice.IsInMST = true;
 
@@ -267,6 +259,8 @@ namespace pa_week_1_3
                     {
                         vert.Weight = edge.Value;
                     }
+                    //TODO: need to optimise heap validation at this moment
+                    heap.Add(vert);
                 }
             }
         }
