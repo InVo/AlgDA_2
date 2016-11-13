@@ -84,7 +84,7 @@ namespace pa_week_2_1
             var resultEdge = getCurrentMinSeparatedEdge();
             if (resultEdge != null)
             {
-                System.Console.WriteLine(string.Format("Result = {0}", resultEdge.Value));
+                System.Console.WriteLine(string.Format("Result = {0}", resultEdge.Value)); //Correct result: 106
             }
         }
 
