@@ -50,6 +50,9 @@
     <None Include="App.config" />
   </ItemGroup>
   <ItemGroup>
+    <Content Include="knapsack1.txt">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Content>
     <Content Include="knapsack_big.txt">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Content>
