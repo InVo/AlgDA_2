@@ -21,23 +21,15 @@ namespace pa_week_3_2
 
     class ResultEntry
     {
-        public long TopItem;
-        public long Capacity;
-
-        public override bool Equals(object obj)
-        {
-            ResultEntry other = obj as ResultEntry;
-            if (other != null)
-                return TopItem == other.TopItem && Capacity == other.Capacity;
-            else
-                return false;
-        }
+        public long Value;
+        public long Requests;
     }
 
     class Program
     {
         static List<Item> _items;
         static Dictionary<uint, long>[] _results;
+        static Dictionary<uint, long>[] _requests;
 
         static void Main(string[] args)
         {
@@ -49,8 +41,9 @@ namespace pa_week_3_2
 
             _items = new List<Item>();
             _results = new Dictionary<uint, long>[itemsCount];
+            _requests = new Dictionary<uint, long>[itemsCount];
 
-            for(int i = 1; i <= itemsCount; ++i)
+            for (int i = 1; i <= itemsCount; ++i)
             {
                 string[] arguments = lines[i].Split(' ');
                 uint weight = uint.Parse(arguments[0]);
@@ -58,7 +51,13 @@ namespace pa_week_3_2
                 var item = new Item(weight, value);
                 _items.Add(item);
                 _results[i - 1] = new Dictionary<uint, long>();
+                _requests[i - 1] = new Dictionary<uint, long>();
             }
+
+            _items.Sort((a, b) =>
+            {
+                return a.Weight.CompareTo(b.Weight);
+            });
 
             long result = GetSolution(itemsCount - 1, totalCapacity);
             int c = 0;
@@ -73,12 +72,14 @@ namespace pa_week_3_2
             if (_results[topItem].ContainsKey(capacity))
             {
                 result = _results[topItem][capacity];
+                _results[topItem].Remove(capacity);
             } else
             {
                 result = Math.Max(GetSolution(topItem - 1, capacity),
                     GetSolution(topItem - 1, capacity - _items[topItem].Weight) + _items[topItem].Value);
                 _results[topItem][capacity] = result;
             }
+                
             return result;
         }
     }
