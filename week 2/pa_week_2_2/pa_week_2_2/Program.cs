@@ -11,6 +11,7 @@ namespace pa_week_2_2
         public bool[] Bits;
         public int OnesCount = 0;
         public long SortingValue = 0;
+        public int Index = 0;
 
         public Element(int size)
         {
@@ -31,11 +32,58 @@ namespace pa_week_2_2
             }
             return result;
         }
+
+        public bool isInDistance(int dist, Element other)
+        {
+            int curDist = 0;
+            for(int i = 0; i < Bits.Length; ++i)
+            {
+                if (Bits[i] != other.Bits[i])
+                {
+                    curDist++;
+                    if (curDist > dist)
+                    {
+                        return false;
+                    }
+                }    
+            }
+            return true;
+        }
     }
 
     class Program
     {
-        static List<Element> elements;
+        static Element[] elements;
+        static int[] parents;
+        static List<Element>[] elementsMap;
+
+        static int Find(int index)
+        {
+            int result = index;
+            List<int> pathCompression = new List<int>();
+            while(result != parents[result])
+            {
+                pathCompression.Add(result);
+                result = parents[result];
+            }
+            foreach(var i in pathCompression)
+            {
+                parents[i] = result;
+            }
+            return result;
+        }
+
+        static bool Union(int a, int b)
+        {
+            int aParent = Find(a);
+            int bParent = Find(b);
+            if (aParent != bParent)
+            {
+                parents[bParent] = aParent;
+                return true;
+            }
+            return false;
+        }
 
         static void Main(string[] args)
         {
@@ -44,7 +92,14 @@ namespace pa_week_2_2
             int count = int.Parse(firstLineArgs[0]);
             int numberOfBits = int.Parse(firstLineArgs[1]);
 
-            elements = new List<Element>(count);
+            elements = new Element[count];
+            parents = new int[count];
+            elementsMap = new List<Element>[numberOfBits];
+
+            for(int i = 0; i < numberOfBits; ++i)
+            {
+                elementsMap[i] = new List<Element>();
+            }
 
             for(int i = 0; i < count; ++i)
             {
@@ -57,39 +112,60 @@ namespace pa_week_2_2
                     if (bitValue == true)
                     {
                         ++element.OnesCount;
-                        element.SortingValue += (long)Math.Pow(2, j);
                     }
                 }
-                elements.Add(element);
+                element.Index = i;
+                elements[i] = element;
+                parents[i] = i;
+                elementsMap[element.OnesCount - 1].Add(element);
             }
 
-            elements.Sort((a, b) =>
+            int clustersCount = count;
+
+            for(int j = 0; j < elementsMap.Length - 2; ++j)
             {
- /*               if (a.OnesCount > b.OnesCount)
+                List<Element> elems = elementsMap[j];
+                for(int k = 0; k < elementsMap[j].Count; ++k)
                 {
-                    return 1;
-                }
-                else if (a.OnesCount == b.OnesCount)
-                { */
-                    if (a.SortingValue > b.SortingValue)
+                    Element elem = elementsMap[j][k];
+                    for(int q = k + 1; q < elems.Count; ++q)
                     {
-                        return 1;
+                        if (elem.isInDistance(2, elementsMap[j][q]))
+                        {
+                            if (Union(elem.Index, elems[q].Index))
+                            {
+                                --clustersCount;
+                            }
+                        }
                     }
-                    else if (a.SortingValue == b.SortingValue)
-                    {
-                        return 0;
-                    }
-//                }
-                return -1;
-            });
 
-            string[] stringArray = new string[count];
-            for(int i = 0; i < elements.Count; ++i)
-            {
-                stringArray[i] = elements[i].ToString();
+
+                    for(int q = 0; q < elementsMap[j+1].Count; ++q)
+                    {
+                        if (elem.isInDistance(2, elementsMap[j + 1][q]))
+                        {
+                            if (Union(elem.Index, elementsMap[j + 1][q].Index))
+                            {
+                                --clustersCount;
+                            }
+                        }
+
+                    }
+
+                    for (int q = 0; q < elementsMap[j + 2].Count; ++q)
+                    {
+                        if (elem.isInDistance(2, elementsMap[j+2][q]))
+                        {
+                            if (Union(elem.Index, elementsMap[j + 2][q].Index))
+                            {
+                                --clustersCount;
+                            }
+                        }
+                    }
+                }
             }
 
-            int c = 0;
+            Console.Write(string.Format("Result number of clusters = {0}", clustersCount)); // Correct result: 6118
         }
     }
 }
