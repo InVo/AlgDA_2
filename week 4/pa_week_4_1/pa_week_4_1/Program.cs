@@ -156,14 +156,14 @@ namespace pa_week_4_1
             bool g2nc = false;
             bool g3nc = false;
             var g1 = parseGraph("g1.txt");
-            var a = ASSPByJohnsonAndDijkstra(g1, out g1nc);
+            var a = ASSPByJacksonAndDijkstra(g1, out g1nc);
             var g2 = parseGraph("g2.txt");
-            var b = ASSPByJohnsonAndDijkstra(g2, out g2nc);
+            var b = ASSPByJacksonAndDijkstra(g2, out g2nc);
             var g3 = parseGraph("g3.txt");
-            var c = ASSPByJohnsonAndDijkstra(g3, out g3nc);
+            var c = ASSPByJacksonAndDijkstra(g3, out g3nc);
         }
 
-        static Graph parseGraph(String fileName)
+        public static Graph parseGraph(string fileName)
         {
             var lines = System.IO.File.ReadAllLines(fileName);
             var firstLineParams = lines[0].Split(' ');
@@ -197,7 +197,7 @@ namespace pa_week_4_1
         /// </summary>
         /// <param name="g">Graph</param>
         /// <param name="s">initial vertice index (should be Number - 1)</param>
-        static long[] BellmanFord(Graph g, int s, out bool haveNegativeCycles)
+        public static long[] BellmanFord(Graph g, int s, out bool haveNegativeCycles)
         {
             haveNegativeCycles = false;
             int n = g.Vertices.Count;
@@ -206,7 +206,7 @@ namespace pa_week_4_1
             {
                 A[0, i] = int.MaxValue;
             }
-            A[0, s - 1] = 0;
+            A[0, s] = 0;
 
             for(int i = 1; i <= n; ++i)
             {
@@ -238,7 +238,7 @@ namespace pa_week_4_1
             return result;
         }
 		
-		private class VerticeWeight : IComparable<VerticeWeight> {
+		public class VerticeWeight : IComparable<VerticeWeight> {
 			public Vertice Vertice;
 			public long Weight;
 			
@@ -257,23 +257,23 @@ namespace pa_week_4_1
 				return -1;
 			}
         }
-		
+
 
 
 
         /// <summary>
         /// Greedy algorithm to compute single-source shortest paths for all other vertices.
-		/// All vertices are put into min heap with value assigned to each vertice which describes
-		/// shortest path length from s so far. On each iteration, vertice with min value picked from the heap
-		/// and added to passed vertices array. Values are updated for all vertices not in passed vertices 
-		/// at the end of all edges incident from picked vertice. Additional vertice pointer for each vertice is required
-		/// to restore whole shortest path. O(nlog(n)) time.
-		/// WARNING - Algorithm is only correct on graphs with no negative edges!
-		/// When using on general graphs, it is required to run Johnson's algorithm first and then recompute edges weights back.
+        /// All vertices are put into min heap with value assigned to each vertice which describes
+        /// shortest path length from s so far. On each iteration, vertice with min value picked from the heap
+        /// and added to passed vertices array. Values are updated for all vertices not in passed vertices 
+        /// at the end of all edges incident from picked vertice. Additional vertice pointer for each vertice is required
+        /// to restore whole shortest path. O(nlog(n)) time.
+        /// WARNING - Algorithm is only correct on graphs with no negative edges!
+        /// When using on general graphs, it is required to run Johnson's algorithm first and then recompute edges weights back.
         /// </summary>
         /// <param name="g">Graph</param>
         /// <param name="s">initial vertice index</param>		
-		static long[] Dijkstra(Graph g, int s) {
+        public static long[] Dijkstra(Graph g, int s) {
 			Heap<VerticeWeight> vertHeap = new Heap<VerticeWeight>(g.Vertices.Count);
 			
 			// Used for O(1) access to vertice by index
@@ -287,17 +287,17 @@ namespace pa_week_4_1
 			
 			while(vertHeap.Count > 0) {
 				VerticeWeight vw = vertHeap.PopMin();
-                passedVertices.Add(vw.Vertice);
                 foreach (var edge in vw.Vertice.ExitingEdges) {
 					int i = edge.Head.Number - 1;
 					if (!passedVertices.Contains(vw.Vertice) && 
 						verticeWeights[i].Weight > vw.Weight + edge.Weight) {
 						verticeWeights[i].Weight = vw.Weight + edge.Weight;
-						vertHeap.Remove(vw);
-						vertHeap.Add(vw);
+						vertHeap.Remove(verticeWeights[i]);
+						vertHeap.Add(verticeWeights[i]);
 					}
-				}
-			}
+                }
+                passedVertices.Add(vw.Vertice);
+            }
 			long[] result = new long[g.Vertices.Count];
 			for(int i = 0; i < result.Length; ++i) {
 				result[i] = verticeWeights[i].Weight;
@@ -308,20 +308,22 @@ namespace pa_week_4_1
 
 
 
-        static List<VerticeWeight> Johnson(Graph g, out bool haveNegativeCycles)
+        public static List<VerticeWeight> Jackson(Graph g, out bool haveNegativeCycles)
         {
             var newGraph = g.Copy();
             var newVert = new Vertice();
             newVert.Number = g.Vertices.Count + 1;
+            newGraph.Vertices.Add(newVert);
             foreach (var v in newGraph.Vertices)
             {
                 var newEdge = new Edge(newVert, v, 0);
                 newVert.ExitingEdges.Add(newEdge);
+                v.IncomingEdges.Add(newEdge);
                 newGraph.Edges.Add(newEdge);
             }
             long[] resultWeights = BellmanFord(newGraph, newVert.Number - 1, out haveNegativeCycles);
             var result = new List<VerticeWeight>();
-            for(int i = 0; i < resultWeights.Length; ++i)
+            for(int i = 0; i < g.Vertices.Count; ++i)
             {
                 result.Add(new VerticeWeight(g.Vertices[i], resultWeights[i]));
             }
@@ -331,9 +333,9 @@ namespace pa_week_4_1
 
 
 
-        static long[ , ] ASSPByJohnsonAndDijkstra(Graph g, out bool haveNegativeCycles)
+        static long[ , ] ASSPByJacksonAndDijkstra(Graph g, out bool haveNegativeCycles)
         {
-            var verticeWeights = Johnson(g, out haveNegativeCycles);
+            var verticeWeights = Jackson(g, out haveNegativeCycles);
             foreach (var e in g.Edges)
             {
                 var tail = verticeWeights.Find(vw => vw.Vertice == e.Tail);
