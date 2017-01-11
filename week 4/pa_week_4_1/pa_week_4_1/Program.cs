@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
-
+using System.Threading;
+using System.Diagnostics;
 
 namespace pa_week_4_1
 {
@@ -152,6 +153,8 @@ namespace pa_week_4_1
             // All graphs have negative edges 
 
             // At current point: g1 and g2 have negative cycles, g3 doesn't have
+            Stopwatch st = new Stopwatch();
+            st.Start();
             bool g1nc = false;
             bool g2nc = false;
             bool g3nc = false;
@@ -161,6 +164,9 @@ namespace pa_week_4_1
             var b = ASSPByJacksonAndDijkstra(g2, out g2nc);
             var g3 = parseGraph("g3.txt");
             var c = ASSPByJacksonAndDijkstra(g3, out g3nc);
+            st.Stop();
+            Console.WriteLine("all done in " + st.Elapsed.ToString());
+            Console.ReadLine();
         }
 
         public static Graph parseGraph(string fileName)
@@ -347,15 +353,40 @@ namespace pa_week_4_1
                 }
             }
             long[,] result = new long[g.Vertices.Count, g.Vertices.Count];
-            for(int i = 0; i < g.Vertices.Count; ++i)
+            Thread[] threads = new Thread[g.Vertices.Count];
+            int index = i;
+
+            int threadsNum = 5;
+            int start = 0;
+            int end = 0;
+            int step = g.Vertices.Count / threadsNum;
+            for(int th = 0; th < threadsNum; ++th)
             {
-                var dijRes = Dijkstra(g, i);
-                for(int j = 0; j < dijRes.Length; ++ j)
+                end = start + step;
+                int thStart = start;
+                int thEnd = end;
+
+            }
+            Thread t = new Thread(() =>
+            {
+                for (int i = 0; i < g.Vertices.Count; ++i)
                 {
-                    var sourceWeight = verticeWeights.Find(vw => vw.Vertice.Number == i + 1);
-                    var endWeight = verticeWeights.Find(vw => vw.Vertice.Number == j + 1);
-                    result[i, j] = dijRes[j] + endWeight.Weight - sourceWeight.Weight;
+                    var dijRes = Dijkstra(g, index);
+                    for (int j = 0; j < dijRes.Length; ++j)
+                    {
+                        var sourceWeight = verticeWeights.Find(vw => vw.Vertice.Number == index + 1);
+                        var endWeight = verticeWeights.Find(vw => vw.Vertice.Number == j + 1);
+                        result[index, j] = dijRes[j] + endWeight.Weight - sourceWeight.Weight;
+                    }
                 }
+            });
+            threads[i] = t;
+            t.Start();
+
+
+            foreach(var t in threads)
+            {
+                t.Join();
             }
             return result;
         }
